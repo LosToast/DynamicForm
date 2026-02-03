@@ -1,0 +1,67 @@
+/* Layout */
+.layout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; padding: 16px; }
+.panel { display: flex; flex-direction: column; gap: 16px; }
+.card { border: 1px solid #ddd; border-radius: 10px; padding: 12px; background: #fff; }
+.cardTitle { font-weight: 700; margin-bottom: 8px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.col { display: flex; flex-direction: column; gap: 6px; }
+.label { font-size: 12px; color: #111; font-weight: 600; }
+.req { color: #c00; }
+
+/* ✅ Force readable input colors */
+.input, .textarea, select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+
+  background: #ffffff !important;
+  color: #111111 !important;
+
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Placeholder color */
+.input::placeholder,
+.textarea::placeholder {
+  color: #666 !important;
+  opacity: 1;
+}
+
+/* Textarea */
+.textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+/* Buttons */
+.btnRow { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+button { padding: 8px 10px; border-radius: 8px; border: 1px solid #bbb; background: #f7f7f7; cursor: pointer; color: #111; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+.danger { border-color: #d33; color: #d33; }
+
+.divider { height: 1px; background: #eee; margin: 10px 0; }
+.muted { color: #555; }
+.small { font-size: 12px; }
+
+/* JSON preview */
+.pre {
+  background: #0b1020;
+  color: #e7e7e7;
+  padding: 10px;
+  border-radius: 8px;
+  overflow: auto;
+}
+
+/* Field builder */
+.rowWrap { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border-radius: 999px; padding: 6px 10px; }
+.fieldEditor { border: 1px dashed #ddd; border-radius: 10px; padding: 10px; margin-top: 10px; }
+.fieldRow { margin-top: 10px; }
+.checkboxRow { display: flex; align-items: center; gap: 8px; color: #111; }
+.options { display: flex; flex-direction: column; gap: 6px; }
+.opt { display: flex; align-items: center; gap: 8px; color: #111; }
+
+/* Slider */
+.sliderRow { display: flex; align-items: center; gap: 12px; }
+.sliderVal { min-width: 24px; font-weight: 600; color: #111; }
