@@ -11,6 +11,7 @@ import com.example.dynamicform.service.FormService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -53,5 +54,15 @@ public class FormController {
     @PostMapping("/{formId}/archive")
     public void archive(@PathVariable UUID formId) {
         service.archiveForm(formId);
+    }
+
+    @GetMapping("/{formId}/versions")
+    public List<FormVersion> listVersions(@PathVariable UUID formId) {
+        return service.listVersions(formId);
+    }
+
+    @GetMapping("/{formId}/versions/{versionId}")
+    public FormVersion getVersion(@PathVariable UUID formId, @PathVariable UUID versionId) {
+        return service.getVersion(formId, versionId);
     }
 }

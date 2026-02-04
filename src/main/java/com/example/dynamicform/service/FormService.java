@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.JsonNode;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -77,22 +78,24 @@ public class FormService {
             throw new BadRequestException("Version does not belong to form.");
         }
 
-        // Deactivate any current active version
-        versionRepo.findByFormIdAndIsActiveTrue(formId).ifPresent(active -> {
-            active.setActive(false);
-            versionRepo.save(active);
-        });
+        // 1) Deactivate current active (if any)
+        int off = versionRepo.deactivateActive(formId);
 
-        // Activate target version
-        toPublish.setActive(true);
-        toPublish.setPublishedAt(OffsetDateTime.now());
-        versionRepo.save(toPublish);
+        // 2) Activate this version
+        int on = versionRepo.activateVersion(formId, versionId, OffsetDateTime.now());
 
-        // Update form status
+        if (on != 1) {
+            throw new IllegalStateException("Failed to activate versionId=" + versionId + " (updated rows=" + on + ")");
+        }
+
+        // 3) Update form status
         form.setStatus(FormStatus.PUBLISHED);
         formRepo.save(form);
 
-        return toPublish;
+        // 4) Return fresh state
+        return versionRepo.findById(versionId)
+                .orElseThrow(() -> new NotFoundException("Version not found after publish: " + versionId));
+
     }
 
     public FormVersion getActiveVersion(UUID formId) {
@@ -109,7 +112,7 @@ public class FormService {
             throw new BadRequestException("Submission version does not belong to this form.");
         }
 
-        if (!Boolean.TRUE.equals(version.getActive())) {
+        if (version.getPublishedAt() == null) {
             throw new BadRequestException("Cannot submit to an inactive (not published) form version.");
         }
 
@@ -136,5 +139,20 @@ public class FormService {
             active.setActive(false);
             versionRepo.save(active);
         });
+    }
+
+    public List<FormVersion> listVersions(UUID formId) {
+        // ensure form exists (optional but good)
+        formRepo.findById(formId).orElseThrow(() -> new NotFoundException("Form not found: " + formId));
+        return versionRepo.findAllByFormIdOrderByVersionDesc(formId);
+    }
+
+    public FormVersion getVersion(UUID formId, UUID versionId) {
+        FormVersion v = versionRepo.findById(versionId)
+                .orElseThrow(() -> new NotFoundException("Version not found: " + versionId));
+        if (!v.getFormId().equals(formId)) {
+            throw new BadRequestException("Version does not belong to form.");
+        }
+        return v;
     }
 }
