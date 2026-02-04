@@ -42,7 +42,7 @@ public class FormService {
     @Transactional
     public FormVersion createNewVersion(UUID formId, Map<String, Object> schemaJson) {
         // Ensure form exists
-        Form form = formRepo.findById(formId)
+        Form form = formRepo.findByIdForUpdate(formId)
                 .orElseThrow(() -> new NotFoundException("Form not found: " + formId));
 
         if (form.getStatus() == FormStatus.ARCHIVED) {
@@ -64,7 +64,7 @@ public class FormService {
 
     @Transactional
     public FormVersion publishVersion(UUID formId, UUID versionId) {
-        Form form = formRepo.findById(formId)
+        Form form = formRepo.findByIdForUpdate(formId)
                 .orElseThrow(() -> new NotFoundException("Form not found: " + formId));
 
         if (form.getStatus() == FormStatus.ARCHIVED) {

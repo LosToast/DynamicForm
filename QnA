@@ -1,0 +1,65 @@
+suppose there are 2 diff admin created 2 diff forms so at that time what verion will be active
+both will be active as they are two diff forms or not only one will active if only 1 will be active in scenrario than it is a flwa
+
+In that scenario **both will be active** — and that’s exactly how it should work.
+
+### Why it’s not a flaw
+Your uniqueness rule is **per form**, not global.
+
+- Constraint/index is effectively:
+  **“Only 1 active version for a given `form_id`.”**
+- It does **NOT** mean “only 1 active version in the whole system”.
+
+So:
+
+✅ Admin A creates **Form A** → publishes v1 → **Form A has 1 active version**
+✅ Admin B creates **Form B** → publishes v1 → **Form B has 1 active version**
+
+Result:
+- Form A active = (FormA, v1)
+- Form B active = (FormB, v1)
+
+Both are active at the same time, because they’re different forms.
+
+---
+
+## What “single active version” means precisely
+**Single active version per form**:
+
+| form_id | version_id | is_active |
+|--------|------------|----------|
+| A      | v1         | true     |
+| A      | v2         | false    |
+| B      | v1         | true     |
+| B      | v2         | false    |
+
+This is valid because:
+- A has only one `true`
+- B has only one `true`
+
+---
+
+## When would it be a flaw?
+It would only be a flaw if your DB constraint was mistakenly global like:
+- `unique(is_active)` (bad)
+- or `unique(is_active) where is_active=true` (bad)
+
+But your constraint name `uq_active_version_per_form` and the error message you got:
+> `Key (form_id)=... already exists`
+
+…shows it’s correctly scoped to `form_id`.
+
+---
+
+## About implementing locking
+Locking will also be **per form**, not system-wide.
+
+Meaning:
+- Publishing Form A does NOT block publishing Form B
+- It only blocks another publish for **the same formId** until the first publish finishes
+
+So it scales fine.
+
+---
+
+If you want, paste your SQL for the partial unique index (or the `CREATE INDEX ... WHERE is_active = true`) and I’ll confirm it is correctly defined per `form_id` and not global.
