@@ -1,4 +1,4 @@
-suppose there are 2 diff admin created 2 diff forms so at that time what verion will be active
+1) suppose there are 2 diff admin created 2 diff forms so at that time what verion will be active
 both will be active as they are two diff forms or not only one will active if only 1 will be active in scenrario than it is a flwa
 
 In that scenario **both will be active** — and that’s exactly how it should work.
@@ -63,3 +63,89 @@ So it scales fine.
 ---
 
 If you want, paste your SQL for the partial unique index (or the `CREATE INDEX ... WHERE is_active = true`) and I’ll confirm it is correctly defined per `form_id` and not global.
+
+2) Caching to scale
+“Cache active schema per formId” — what exactly?
+
+Idea:
+Store the result of “active version” lookup in cache:
+
+Key: activeVersion:<formId>
+Value: the whole active FormVersion DTO (id, version, schemaJson, publishedAt…)
+
+Then GET /active becomes:
+
+cache hit → return immediately
+
+cache miss → query DB, store into cache, return
+
+Why it helps
+
+Active version doesn’t change frequently. It changes only when you publish.
+So caching is very effective.
+
+Cache invalidation rule
+
+When you publish new version:
+
+invalidate activeVersion:<formId>
+or overwrite it with new active version
+
+3) “Cache schema by versionId” — what exactly?
+
+Idea:
+Each version is immutable (best practice). So it’s perfect for caching.
+
+Key: formVersion:<versionId>
+Value: schema JSON + metadata
+
+Then GET /versions/{versionId} becomes:
+
+cache hit → return schema instantly
+
+cache miss → query DB, cache it, return
+
+Why it helps
+
+Diff calculations or viewing old versions would repeatedly call version fetch
+
+Since versions never change, you can cache them longer (hours/days)
+
+Invalidation rule
+
+If versions are immutable: no invalidation needed (except TTL expiry)
+
+Example caching strategy (recommended)
+Caches
+
+active-version cache (key: formId)
+
+version-by-id cache (key: versionId)
+
+TTL suggestions
+
+Active version: TTL 5–30 minutes (plus explicit eviction on publish)
+
+Version by ID: TTL 6–24 hours (or even days)
+
+4) Why two caches then?
+
+Because the lookup keys are different:
+
+/active is “by formId” → cache activeVersion:<formId>
+
+/versions/{id} is “by versionId” → cache versionById:<versionId>
+
+Even if the payload shape is similar, the lookup and invalidation rules are different:
+
+active changes on publish → must evict activeVersion:<formId>
+
+a version snapshot doesn’t change → safe to cache for long time by versionId
+
+5) Quick rule-of-thumb
+
+/active = “current published version for new users”
+
+/versions/{id} = “exact historical snapshot used by existing users / diff / admin”
+
+So both endpoints are required for your enterprise “sync new version / keep old version” behavior.
