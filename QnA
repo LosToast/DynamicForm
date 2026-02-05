@@ -149,3 +149,5 @@ a version snapshot doesn’t change → safe to cache for long time by versionId
 /versions/{id} = “exact historical snapshot used by existing users / diff / admin”
 
 So both endpoints are required for your enterprise “sync new version / keep old version” behavior.
+
+//Added Schema Validation as well

@@ -61,6 +61,13 @@
             <version>4.0.1</version>
             <scope>compile</scope>
         </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/com.networknt/json-schema-validator -->
+        <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>2.0.0</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

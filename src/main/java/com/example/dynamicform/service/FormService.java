@@ -9,9 +9,12 @@ import com.example.dynamicform.models.FormVersion;
 import com.example.dynamicform.repo.FormRepository;
 import com.example.dynamicform.repo.FormSubmissionRepository;
 import com.example.dynamicform.repo.FormVersionRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.SchemaValidationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.databind.JsonNode;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -23,11 +26,13 @@ public class FormService {
     private final FormRepository formRepo;
     private final FormVersionRepository versionRepo;
     private final FormSubmissionRepository submissionRepo;
+    private final SchemaValidationService schemaValidationService;
 
-    public FormService(FormRepository formRepo, FormVersionRepository versionRepo, FormSubmissionRepository submissionRepo) {
+    public FormService(FormRepository formRepo, FormVersionRepository versionRepo, FormSubmissionRepository submissionRepo, SchemaValidationService schemaValidationService) {
         this.formRepo = formRepo;
         this.versionRepo = versionRepo;
         this.submissionRepo = submissionRepo;
+        this.schemaValidationService = schemaValidationService;
     }
 
     public Form createForm(String name, String createdBy) {
@@ -103,10 +108,14 @@ public class FormService {
                 .orElseThrow(() -> new NotFoundException("No active version found for form: " + formId));
     }
 
-    public FormSubmission submit(UUID formId, UUID versionId, String submittedBy, JsonNode answersJson) {
+    public FormSubmission submit(UUID formId, UUID versionId, String submittedBy, JsonNode answersJson) throws SchemaValidationException {
         // Must exist and match
         FormVersion version = versionRepo.findById(versionId)
                 .orElseThrow(() -> new NotFoundException("Version not found: " + versionId));
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode schemaNode = objectMapper.valueToTree(version.getSchemaJson());
+        schemaValidationService.validateSchema(schemaNode.toString(),answersJson);
 
         if (!version.getFormId().equals(formId)) {
             throw new BadRequestException("Submission version does not belong to this form.");
